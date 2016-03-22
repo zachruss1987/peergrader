@@ -1,0 +1,4 @@
+travispy
+PyGithub
+pymongo
+requests_oauthlib
