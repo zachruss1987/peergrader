@@ -44,8 +44,8 @@ def lighten(img1, img2):
     Returns:
         numpy output array of the lightened pixels of the input
     """
-    ligtened = np.max(np.array([img1, img2]), axis=0)
-    return ligtened.astype(img1.dtype)
+    lightened = np.max(np.array([img1, img2]), axis=0)
+    return lightened.astype(img1.dtype)
     
 def darken(img1, img2):
     """Performs the "darken" blend operation on two images
