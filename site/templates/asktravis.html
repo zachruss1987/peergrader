@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}<title>Travis CI for {{fork}}</title>{% endblock %}
+{% block content %}
+  <h1>Travis CI Setup for {{fork}}</h1>
+  <p>Now that your fork ({{fork}}) has been created, you need to sign into Travis CI with your account
+     ({{username}}). Once you sign in, go to your profile (click {{username}}). Press the button to
+     sync your account, and when {{fork}} shows in your profile, press the toggle button next to it.
+     Now that your account is setup, Travis CI will test your assignment code each time you commit it
+     and report the results to PeerGrader.</p>
+  <p><a href="https://travis-ci.org/profile/{{username}}" target="_blank" class="btn btn-lg btn-success">Sign in to Travis CI</a></p>  
+  <p><a href="{{ url_for('checktravis') }}" class="btn btn-lg btn-success">Continue to PeerGrader</a></p>  
+{% endblock %}

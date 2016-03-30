@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}<title>Welcome to PeerGrader</title>{% endblock %}
+{% block content %}
+  <h1>Welcome to PeerGrader</h1>
+  <p>PeerGrader is a prototype system for online programming assignments. To use PeerGrader you must have a 
+     <a href="https://www.github.com/">GitHub</a> account. Since this is an experimental prototype system,
+     it is recommended that a fresh GitHub account is used to prevent any possibility of PeerGrader
+     unintentionally affecting your important data or disclosing your account information.</p>
+     
+  <p>Use the below link to sign into your GitHub account. Note that PeerGrader does access or store your
+     GitHub password at any time</p>
+  <p><a href="{{ url_for('github') }}" class="btn btn-social btn-lg btn-github"><i class="fa fa-github"></i>Sign in with GitHub</a></p>  
+{% endblock %}

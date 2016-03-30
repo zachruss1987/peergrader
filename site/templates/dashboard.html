@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}<title>Test Assignment Dashboard</title>{% endblock %}
+{% block content %}
+  <h1>Test Assignment {{fork}}</h1>
+  <h2>Assignment Instructions</h2>
+  <p>Your personal <a href="https://github.com/{{fork}}">fork on GitHub</a> is ready with the test
+     assignment Python code. To begin working on the assignment,
+     <a href="https://git-scm.com/book/en/v2/Getting-Started-Installing-Git">install Git</a>
+     if you have not already done so, and run the following command to clone your fork locally:
+  </p>
+  <p><pre>git clone https://github.com/{{fork}}.git</pre></p>
+  <p>Once you have the project cloned locally, you can add your code to the assignment file at
+     peergrader/sample/hw1.py. The assignment code requires some external Python libraries to run,
+     which you can install with the following command using <a href="https://pypi.python.org/pypi/pip">pip</a>:
+  </p>
+  <p><pre>pip install -r requirements.txt</pre></p>
+  <p>The assignment itself involves implementing some simple image processing algorithms in Python using
+     numpy. An example solution of a correct assignment submission is in peergrader/sample/hw1_solution.py.
+     To see the output of your implemtation, run the hw1.py directly with
+  </p>
+  <p><pre>python hw1.py</pre></p>
+  <p>Images showing the result of each function will be displayed on your screen.
+     To run the assignment submission tests locally, use
+  </p>
+  <pre>nosetests</pre>
+  <p>To submit your code to PeerGrader, push a commit using Git, such as with the following commands:
+  </p>
+     <p><pre>git add hw1.py
+git commit -m "Your commit message"
+git push origin master</pre></p>
+  </p>
+  <p>You can submit your code multiple times and the results of each will be shown on the PeerGrader site.
+  When you are ready to finish the assignment, you can mark the current commit as your official
+  submission.
+  </p>
+{% endblock %}

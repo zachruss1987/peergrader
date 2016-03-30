@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}<title>Intialize Test Assignment for {{username}}</title>{% endblock %}
+{% block content %}
+  <h1>Intialize Test Assignment for {{username}}</h1>
+  <p>To start working on the Test Assignment, PeerGrader needs to create a Fork on GitHub.
+     The fork will be created automatically on your linked account ({{username}}) and you
+     can then clone the repo and begin working on the assignment.</p>
+  <p><a href="{{ url_for('dofork') }}" class="btn btn-social btn-lg btn-github"><i class="fa fa-github"></i>Create Fork</a></p>  
+{% endblock %}
