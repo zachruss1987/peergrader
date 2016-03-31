@@ -70,7 +70,7 @@ def glow(img1, img2):
     Returns:
         numpy output array of the darkened pixels of the input
     """
-    glowing = img1.astype(np.float32) ** 2
+    glowing = img1 ** 2
     glowing = glowing / (255 - img2)
     glowing = np.clip(glowing, 0, 255)
     return glowing.astype(img1.dtype)
