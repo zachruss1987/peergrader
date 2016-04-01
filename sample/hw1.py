@@ -57,7 +57,6 @@ def darken(img1, img2):
     Returns:
         numpy output array of the darkened pixels of the input
     """
-    img1.fakefakefake
     darkened = np.min(np.array([img1, img2]), axis=0)
     return darkened.astype(img1.dtype)
     
