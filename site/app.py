@@ -1,7 +1,7 @@
 import sys, logging
 from logging.handlers import RotatingFileHandler
 from requests_oauthlib import OAuth2Session
-from flask import Flask, request, redirect, session, url_for, render_template
+from flask import Flask, request, redirect, session, url_for, render_template, json
 from flask.json import jsonify
 from pymongo import MongoClient
 from travispy import TravisPy
@@ -32,7 +32,32 @@ def root():
 def dashboard():
     if not session.get('username') or not session.get('fork'):
         return redirect(url_for('.index'))
-    return render_template('dashboard.html', username=session['username'], fork=session['fork'])
+    build, results = findbuild(session['fork'])
+    return results
+    return render_template('dashboard.html', username=session['username'], fork=session['fork'], build=build, results=results)
+    
+def findbuild(fork):
+    token = session['oauth_token']['access_token']
+    travis = TravisPy.github_auth(token)
+    builds = travis.builds(slug=fork, event_type='push')
+    if not builds:
+        return None, None
+    build = builds[0]
+    if not build.job_ids:
+        return None, None
+    jobid = build.job_ids[0]
+    job = travis.job(jobid)
+    logid = job.log_id
+    log = travis.log(logid)
+    logged = log.body
+    end = logged.rfind('}----------------------------------------------------------------------')
+    if end < 1:
+        return None, None
+    end += 1
+    start = logged.rfind('{"stats": {')
+    logged = logged[start:end]
+    results = json.loads(logged)
+    return build, results
     
 @app.route('/about')
 def about():
