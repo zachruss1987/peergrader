@@ -27,6 +27,14 @@ class TestHw1:
         self.check_image(image)
         assert image.shape == self.large_shape_gray
         
+    def test_all_sanity(self):
+        to_grayscale(self.large_white_rgb)
+        split_channels(self.large_white_rgb)
+        average(self.large_white_rgb, self.large_white_rgb)
+        lighten(self.large_white_rgb, self.large_black_rgb)
+        darken(self.large_white_rgb, self.large_white_rgb)
+        glow(self.large_white_rgb, self.large_black_rgb)
+        
     def test_to_grayscale_sanity(self):
         output = to_grayscale(self.large_white_rgb)
         self.check_large_gray(output)
