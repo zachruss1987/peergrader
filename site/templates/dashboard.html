@@ -27,8 +27,8 @@
       <p>To submit your code to PeerGrader, push a commit using Git, such as with the following commands:
       </p>
          <p><pre>git add hw1.py
-    git commit -m "Your commit message"
-    git push origin master</pre></p>
+git commit -m "Your commit message"
+git push origin master</pre></p>
       </p>
       <p>You can submit your code multiple times and the results of each will be shown on the PeerGrader site.
       When you are ready to finish the assignment, you can mark the current commit as your official
@@ -54,6 +54,25 @@
           {{results['stats']['errors']}} Error
       </div>
     </div>
+    {% for result in results['results'] %}
+    <div>
+      <h3>Test: {{result['name']}} ({{result['type']}})</h3>
+      {% if result['type'] != 'success' %}
+      <p>Error Details:</p>
+      <p><pre>{{result['tb']}}</pre></p>
+      <p><a href="{{ url_for('discuss', test=result.name) }}" class="btn btn-info">Discuss This Error</a></p>
+      {% endif %}
+    </div>
+    {% endfor %}
+    {% if results['stats']['passes'] == results['stats']['total'] %}
+    <div>
+    <h2>Assignment Submission</h2>
+    <p>Congratulations your assignment passes all tests! Press the button below to submit your code
+       to be reviewed. You can continue to improve your code and submit multiple times before the
+       assignment deadline.</p>
+    <p><a href="{{ url_for('dashboard') }}" class="btn btn-success">Submit Assignment</a></p>
+    </div>
+    {% endif %}
     {% endif %}
   </div>
 {% endblock %}

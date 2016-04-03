@@ -1,4 +1,4 @@
-import sys, logging
+import sys, logging, time, base64, hashlib, hmac, json
 from logging.handlers import RotatingFileHandler
 from requests_oauthlib import OAuth2Session
 from flask import Flask, request, redirect, session, url_for, render_template, json
@@ -19,6 +19,8 @@ BASE_URL = 'https://peergrader.ctgraham.com'
 AUTHORIZE_URL = 'https://github.com/login/oauth/authorize'
 TOKEN_URL = 'https://github.com/login/oauth/access_token'
 SCOPES = ['read:org', 'user:email', 'repo_deployment', 'repo:status', 'write:repo_hook', 'public_repo']
+DISQUS_AUTHORIZE = 'https://disqus.com/api/oauth/2.0/authorize/'
+DISQUS_TOKEN = 'https://disqus.com/api/oauth/2.0/access_token/'
 HOMEWORK_REPO = 'chrisgtech/peergrader'
 
 @app.route('/')
@@ -30,15 +32,37 @@ def root():
     
 @app.route('/dashboard')
 def dashboard():
-    if not session.get('username') or not session.get('fork'):
-        return redirect(url_for('.index'))
-    build, results = findbuild(session['fork'])
-    return results
+    travis = loadtravis()
+    if not travis:
+        return redirect(url_for('.root'))
+    build, results = findbuild(travis, session['fork'])
     return render_template('dashboard.html', username=session['username'], fork=session['fork'], build=build, results=results)
+   
+@app.route('/discuss')
+def discuss():
+    travis = loadtravis()
+    if not travis:
+        return redirect(url_for('.dashboard'))
+    build, results = findbuild(travis, session['fork'])
+    testname = request.args.get('test')
+    test = None
+    for result in results['results']:
+        if result['name'] == testname:
+            test = result
+            break
+    if not test or test['type'] == 'success':
+        return redirect(url_for('.dashboard'))
+    hashed = hashlib.sha256('%s %s' % (test['name'], test['tb'])).hexdigest()
+    slug = 'error_%s' % hashed
+    details = {'id':'peergrader_user_%s' % session['username'], 'username':session['username'], 'email':session['useremail']}
+    jsoned = json.dumps(details)
+    message = base64.b64encode(jsoned)
+    timestamp = int(time.time())
+    sig = hmac.HMAC(secrets.DISQUS_SECRET, '%s %s' % (message, timestamp), hashlib.sha1).hexdigest()
+    data = '%s %s %s' % (message, sig, timestamp)
+    return render_template('discuss.html', test=test, public_key=secrets.DISQUS_PUBLIC, message=data, slug=slug)
     
-def findbuild(fork):
-    token = session['oauth_token']['access_token']
-    travis = TravisPy.github_auth(token)
+def findbuild(travis, fork):
     builds = travis.builds(slug=fork, event_type='push')
     if not builds:
         return None, None
@@ -59,6 +83,17 @@ def findbuild(fork):
     results = json.loads(logged)
     return build, results
     
+def loadtravis():
+    if not session.get('username') or not session.get('fork'):
+        return None
+    travis = None
+    try:
+        token = session['oauth_token']['access_token']
+        travis = TravisPy.github_auth(token)
+    except:
+        return None
+    return travis
+    
 @app.route('/about')
 def about():
     return render_template('about.html')
@@ -66,6 +101,14 @@ def about():
 @app.route('/contact')
 def contact():
     return render_template('contact.html')
+    
+@app.route('/terms')
+def terms():
+    return render_template('terms.html')
+    
+@app.route('/privacy')
+def privacy():
+    return render_template('privacy.html')
     
 @app.route('/github')
 def github():
@@ -77,7 +120,7 @@ def github():
         return redirect(authorization_url)
     except:
         exc_type, exc_value, exc_traceback = sys.exc_info()
-        return 'index: %s\n%s\n%s' % (exc_type, exc_value, exc_traceback)
+        return 'github: %s\n%s\n%s' % (exc_type, exc_value, exc_traceback)
     
 @app.route('/authorize', methods=["GET"])
 def authorize():
@@ -93,6 +136,34 @@ def authorize():
     except:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         return 'authorize: %s\n%s %s\n%s' % (exc_type, exc_value, requested, exc_traceback)
+    
+#@app.route('/disqus')
+#def disqus():
+#    try:
+#        #authorizer = BASE_URL + url_for('.authorize')
+#        #auth = OAuth2Session(secrets.DISQUS_PUBLIC, redirect_uri=authorizer, scope=SCOPES)
+#        auth = OAuth2Session(secrets.DISQUS_PUBLIC)
+#        authorization_url, state = auth.authorization_url(DISQUS_AUTHORIZE)
+#        session['oauth_state'] = state
+#        return redirect(authorization_url)
+#    except:
+#        exc_type, exc_value, exc_traceback = sys.exc_info()
+#        return 'disqus: %s\n%s\n%s' % (exc_type, exc_value, exc_traceback)
+#    
+#@app.route('/authd', methods=["GET"])
+#def authd():
+#    try:
+#        requested = request.url.replace('http', 'https')
+#        #github = OAuth2Session(secrets.DISQUS_PUBLIC, state=session['oauth_d'])
+#        github = OAuth2Session(secrets.DISQUS_PUBLIC)
+#        token = github.fetch_token(DISQUS_TOKEN, client_secret=secrets.DISQUS_PUBLIC,
+#                                   authorization_response=requested)
+#
+#        session['token_d'] = token
+#        return redirect(url_for('.discuss'))
+#    except:
+#        exc_type, exc_value, exc_traceback = sys.exc_info()
+#        return 'authd: %s\n%s %s\n%s' % (exc_type, exc_value, requested, exc_traceback)
         
 @app.route("/checkfork", methods=["GET"])
 def checkfork():
@@ -146,6 +217,8 @@ def checktravis():
         token = session['oauth_token']['access_token']
         travis = TravisPy.github_auth(token)
         username = session['username']
+        user = travis.user()
+        session['useremail'] = user.email
         repos = travis.repos(member=username)
         verified = False
         for repo in repos:
@@ -158,6 +231,9 @@ def checktravis():
             return redirect(url_for('.asktravis'))
     except:
         exc_type, exc_value, exc_traceback = sys.exc_info()
+        if 'Forbidden' in str(exc_value):
+            session['username'] = None
+            return redirect(url_for('.root'))
         return 'checktravis: %s\n%s\n%s' % (exc_type, exc_value, exc_traceback)
     
 @app.route('/asktravis')
