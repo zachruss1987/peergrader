@@ -1,5 +1,6 @@
 # Example homework assignment 1
 
+import os
 from PIL import Image, ImageDraw, ImageFont
 import numpy as np
 
@@ -97,6 +98,8 @@ def showtext(image, text):
     return image
     
 def main():
+    if not os.path.exists('output'):
+        os.makedirs('output')
     print 'Loading balloon image'
     balloon_image = Image.open('images/balloon.jpg')
     balloon = np.array(balloon_image)
@@ -108,6 +111,7 @@ def main():
     gray = Image.fromarray(output, 'L')
     showtext(gray, 'Balloon Grayscale')
     gray.show()
+    gray.save('output/to_grayscale.png')
     
     print 'Testing split_channels'
     channels = ['Red', 'Green', 'Blue']
@@ -115,6 +119,7 @@ def main():
         split = Image.fromarray(channel, 'L')
         showtext(split, 'Balloon %s Channel' % channels[index])
         split.show()
+        split.save('output/split_channels_%s.png' % channels[index].lower())
         
     print 'Loading sky image'
     sky_image = Image.open('images/sky.jpg')
@@ -127,24 +132,28 @@ def main():
     averaged = Image.fromarray(output)
     showtext(averaged, 'Average Effect')
     averaged.show()
+    averaged.save('output/average.png')
     
     print 'Testing lighten'
     output = lighten(balloon, sky)
     lightened = Image.fromarray(output)
     showtext(lightened, 'Lighten Effect')
     lightened.show()
+    lightened.save('output/lighten.png')
     
     print 'Testing darken'
     output = darken(balloon, sky)
     darkened = Image.fromarray(output)
     showtext(darkened, 'Darken Effect')
     darkened.show()
+    darkened.save('output/darken.png')
     
     print 'Testing glow'
     output = glow(balloon, sky)
     glowing = Image.fromarray(output)
     showtext(glowing, 'Glow Effect')
     glowing.show()
+    glowing.save('output/glow.png')
 
 if __name__ == "__main__":
     main()
