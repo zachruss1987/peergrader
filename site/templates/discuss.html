@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}<title>Error Discussion For {{test['name']}}</title>{% endblock %}
+{% block content %}
+<div>
+  <h3>Test: {{test['name']}} ({{test['type']}})</h3>
+  <p>Error Details:</p>
+  <p><pre>{{test['tb']}}</pre></p>
+</div>
+<script id="dsq-count-scr" src="//peergrader.disqus.com/count.js" async></script>
+<div id="disqus_thread"></div>
+<script>
+    var disqus_config = function () {
+        this.page.url = "https://peergrader.ctgraham.com{{ url_for('discuss', test=test['name'], slug=slug) }}";
+        this.page.identifier = "{{slug}}";
+        this.page.remote_auth_s3 = "{{message}}";
+        this.page.api_key = "{{public_key}}";
+    };
+    (function() {
+        var d = document, s = d.createElement('script');
+        
+        s.src = '//peergrader.disqus.com/embed.js';
+        
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+{% endblock %}
