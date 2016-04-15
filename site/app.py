@@ -52,7 +52,9 @@ def discuss():
             break
     if not test or test['type'] == 'success':
         return redirect(url_for('.dashboard'))
-    hashed = hashlib.sha256('%s %s' % (test['name'], test['tb'])).hexdigest()
+    trace = test['tb']
+    trace = trace.replace(session['username'], 'user')
+    hashed = hashlib.sha256('%s %s' % (test['name'], trace)).hexdigest()
     slug = 'error_%s' % hashed
     details = {'id':'peergrader_user_%s' % session['username'], 'username':session['username'], 'email':session['useremail']}
     jsoned = json.dumps(details)
@@ -204,6 +206,7 @@ def dofork():
         user = github.get_user()
         repo = github.get_repo(HOMEWORK_REPO)
         fork = user.create_fork(repo)
+        session['fork'] = fork.full_name
         return redirect(url_for('.github'))
     except:
         exc_type, exc_value, exc_traceback = sys.exc_info()
