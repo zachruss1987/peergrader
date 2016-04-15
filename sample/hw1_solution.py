@@ -1,6 +1,7 @@
 # Example homework assignment 1
 
-from PIL import Image
+import os
+from PIL import Image, ImageDraw, ImageFont
 import numpy as np
 
 def to_grayscale(img):
@@ -75,46 +76,79 @@ def glow(img1, img2):
     glowing = np.clip(glowing, 0, 255)
     return glowing.astype(img1.dtype)
     
+def showtext(image, text):
+    font = ImageFont.truetype(font='FreeMono.ttf', size=100)
+    draw = ImageDraw.Draw(image)
+    white = (200,200,200)
+    black = (0,0,0)
+    if image.mode == 'L':
+        white = 200
+        black = 0
+    x, y = 10, max(0, image.size[1] - 100)
+    for xoffset in [-2,2]:
+        for yoffset in [-2,2]:
+            draw.text((x+xoffset, y+yoffset), text, font=font, fill=white)
+    draw.text((x,y), text, font=font, fill=black)
+    del draw
+    return image
+    
 def main():
+    if not os.path.exists('output'):
+        os.makedirs('output')
     print 'Loading balloon image'
-    balloon = Image.open('images/balloon.jpg')
-    balloon.show()
-    balloon = np.array(balloon)
+    balloon_image = Image.open('images/balloon.jpg')
+    balloon = np.array(balloon_image)
+    showtext(balloon_image, 'Balloon Original')
+    balloon_image.show()
     
     print 'Testing to_grayscale'
     output = to_grayscale(balloon)
     gray = Image.fromarray(output, 'L')
+    showtext(gray, 'Balloon Grayscale')
     gray.show()
+    gray.save('output/to_grayscale.jpg')
     
     print 'Testing split_channels'
-    for channel in split_channels(balloon):
+    channels = ['Red', 'Green', 'Blue']
+    for index, channel in enumerate(split_channels(balloon)):
         split = Image.fromarray(channel, 'L')
+        showtext(split, 'Balloon %s Channel' % channels[index])
         split.show()
+        split.save('output/split_channels_%s.jpg' % channels[index].lower())
         
-    print 'Loading balloon image'
-    sky = Image.open('images/sky.jpg')
-    sky.show()
-    sky = np.array(sky)
+    print 'Loading sky image'
+    sky_image = Image.open('images/sky.jpg')
+    sky = np.array(sky_image)
+    showtext(sky_image, 'Sky Original')
+    sky_image.show()
     
     print 'Testing average'
     output = average(balloon, sky)
     averaged = Image.fromarray(output)
+    showtext(averaged, 'Average Effect')
     averaged.show()
+    averaged.save('output/average.jpg')
     
     print 'Testing lighten'
     output = lighten(balloon, sky)
     lightened = Image.fromarray(output)
+    showtext(lightened, 'Lighten Effect')
     lightened.show()
+    lightened.save('output/lighten.jpg')
     
     print 'Testing darken'
     output = darken(balloon, sky)
     darkened = Image.fromarray(output)
+    showtext(darkened, 'Darken Effect')
     darkened.show()
+    darkened.save('output/darken.jpg')
     
     print 'Testing glow'
     output = glow(balloon, sky)
     glowing = Image.fromarray(output)
+    showtext(glowing, 'Glow Effect')
     glowing.show()
+    glowing.save('output/glow.jpg')
 
 if __name__ == "__main__":
     main()
