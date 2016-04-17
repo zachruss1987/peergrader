@@ -32,16 +32,28 @@ def root():
     
 @app.route('/dashboard')
 def dashboard():
-    travis = loadtravis()
-    if not travis:
+    github, travis = loadapis()
+    if not github or not travis:
         return redirect(url_for('.root'))
     build, results = findbuild(travis, session['fork'])
-    return render_template('dashboard.html', username=session['username'], fork=session['fork'], build=build, results=results)
-   
+    submission, latest = findsubmission(github, session['fork'])
+    return render_template('dashboard.html', username=session['username'], fork=session['fork'], build=build, results=results, submission=submission, latest=latest)
+    
+@app.route('/review')
+def review():
+    github, travis = loadapis()
+    if not github or not travis:
+        return redirect(url_for('.root'))
+    submission, latest = findsubmission(github, session['fork'])
+    build, results = None, None
+    if submission:
+        build, results = findbuild(travis, session['fork'], submission)
+    return render_template('review.html', username=session['username'], fork=session['fork'], build=build, results=results, submission=submission, latest=latest)
+
 @app.route('/discuss')
 def discuss():
-    travis = loadtravis()
-    if not travis:
+    github, travis = loadapis()
+    if not github or not travis:
         return redirect(url_for('.dashboard'))
     build, results = findbuild(travis, session['fork'])
     testname = request.args.get('test')
@@ -64,12 +76,18 @@ def discuss():
     data = '%s %s %s' % (message, sig, timestamp)
     return render_template('discuss.html', test=test, public_key=secrets.DISQUS_PUBLIC, message=data, slug=slug)
     
-def findbuild(travis, fork):
+def findbuild(travis, fork, sha=None):
     builds = travis.builds(slug=fork, event_type='push')
     if not builds:
         return None, None
     build = builds[0]
-    if not build.job_ids:
+    if sha:
+        build = None
+        for record in builds:
+            if sha == record.commit.sha:
+                build = record
+                break
+    if not build or not build.job_ids:
         return None, None
     jobid = build.job_ids[0]
     job = travis.job(jobid)
@@ -78,23 +96,38 @@ def findbuild(travis, fork):
     logged = log.body
     end = logged.rfind('}----------------------------------------------------------------------')
     if end < 1:
-        return None, None
+        return logged, None
     end += 1
     start = logged.rfind('{"stats": {')
     logged = logged[start:end]
     results = json.loads(logged)
     return build, results
     
-def loadtravis():
+def findsubmission(github, fork):
     if not session.get('username') or not session.get('fork'):
         return None
-    travis = None
+    repo = github.get_repo(fork)
+    refs = repo.get_git_refs()
+    submission, latest = None, None
+    for ref in refs:
+        name = ref.ref
+        if name == 'refs/heads/master':
+            latest = ref.object.sha
+        elif name == 'refs/heads/submitted':
+            submission = ref.object.sha
+    return submission, latest
+    
+def loadapis():
+    if not session.get('username') or not session.get('fork'):
+        return None, None
+    token = session['oauth_token']['access_token']
+    github, travis = None, None
     try:
-        token = session['oauth_token']['access_token']
+        github = Github(token)
         travis = TravisPy.github_auth(token)
     except:
-        return None
-    return travis
+        return None, None
+    return github, travis
     
 @app.route('/about')
 def about():
@@ -212,6 +245,30 @@ def dofork():
         exc_type, exc_value, exc_traceback = sys.exc_info()
         return 'dofork: %s\n%s\n%s' % (exc_type, exc_value, exc_traceback)
         
+@app.route("/dosubmit", methods=["GET"])
+def dosubmit():
+    try:
+        refname = 'refs/heads/submitted'
+        github, ignored = loadapis()
+        submission, latest = findsubmission(github, session['fork'])
+        if not github or not latest:
+            return redirect(url_for('.root'))
+        repo = github.get_repo(session['fork'])
+        refs = repo.get_git_refs()
+        subref = None
+        for ref in refs:
+            name = ref.ref
+            if name == refname:
+                subref = ref
+        if not subref:
+            subref = repo.create_git_ref(refname, latest)
+        else:
+            subref.edit(latest, True)
+        return redirect(url_for('.dashboard'))
+    except:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        return 'dofork: %s\n%s\n%s' % (exc_type, exc_value, exc_traceback)
+        
 @app.route("/checktravis", methods=["GET"])
 def checktravis():
     try:
@@ -242,6 +299,17 @@ def checktravis():
 @app.route('/asktravis')
 def asktravis():
     return render_template('asktravis.html', username=session['username'], fork=session['fork'])
+    
+@app.route('/testing')
+def testing():
+    github, travis = loadapis()
+    fork = session['fork']
+    build, results = findbuild(travis, fork)
+    newbuild = build.commit.sha
+    submit, latest = findsubmission(github, fork)
+    build, results = findbuild(travis, fork, submit)
+    oldbuild = build.commit.sha
+    return '%s - %s - %s - %s' % (latest, submit, newbuild, oldbuild)
 
 if __name__ == '__main__':
     app.run()

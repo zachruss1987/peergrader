@@ -3,6 +3,11 @@
 {% block content %}
   <h1>Test Assignment {{fork}}</h1>
   <div>
+  <aside>Note: Since this is a test assignment, there is no set deadline.
+         To simulate the assignment deadline occurring, <a href="{{ url_for('review') }}">click here</a>.
+  </aside>
+  </div>
+  <div>
       <h2>Assignment Instructions</h2>
       <p>Your personal <a href="https://github.com/{{fork}}">fork on GitHub</a> is ready with the test
          assignment Python code. To begin working on the assignment,
@@ -37,8 +42,12 @@ git push origin master</pre></p>
   </div>
   <div>
     <h2>Test Results</h2>
-    {% if not results or not build %}
-    <p>No test results yet. Commit your code and check back here for the results.
+    {% if not results and not build %}
+    <p>No test results yet. Commit your code and check back here for the results.</p>
+    {% elif not results %}
+    <p>Your latest commit is still being tested. Refresh the page after a few minutes and your results
+    will be shown. You can also check your progress on
+    <a href="https://travis-ci.org/{{fork}}" target="_blank">Tavis CI</a>.</p>
     {% else %}
     <div class="progress">
       {% set pass = ((results['stats']['passes'] | float) * 100 / (results['stats']['total'] | float)) | int %}
@@ -64,15 +73,36 @@ git push origin master</pre></p>
       {% endif %}
     </div>
     {% endfor %}
-    {% if results['stats']['passes'] == results['stats']['total'] %}
+    {% set allpassed = (results['stats']['passes'] == results['stats']['total']) %}
+    {% set current = submission and (submission == latest) %}
     <div>
     <h2>Assignment Submission</h2>
-    <p>Congratulations your assignment passes all tests! Press the button below to submit your code
-       to be reviewed. You can continue to improve your code and submit multiple times before the
-       assignment deadline.</p>
-    <p><a href="{{ url_for('dashboard') }}" class="btn btn-success">Submit Assignment</a></p>
-    </div>
+    <p>
+    {% if allpassed %}
+    Congratulations your assignment passes all tests!
+    {% else %}
+    Your assignment still fails some tests. You can submit your assignment as-is but you will not receive
+    full credit.
     {% endif %}
+    {% if current %}
+    Your latest code has been submitted. You can always continue working on your code and re-submit
+    before the assignment deadline.
+    {% elif submission %}
+    A previous version of your code was already submitted. Submitting the current version will replace
+    your existing submission.
+    {% else %}
+    Your code has not been submitted yet. Make sure to officially submit your code before the assignment
+    deadline.
+    {% endif %}
+    {% if submission %}
+    You can view your submission content on <a href="https://github.com/{{fork}}/tree/{{submission}}" target=_blank>GitHub</a>.
+    {% endif %}
+    {% if not current %}
+    Press the button below to submit your code.</p>
+    <p><a href="{{ url_for('dosubmit') }}" class="btn btn-success">Submit Assignment</a>
+    {% endif %}
+    </p>
+    </div>
     {% endif %}
   </div>
 {% endblock %}

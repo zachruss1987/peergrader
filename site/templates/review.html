@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}<title>Test Assignment Dashboard</title>{% endblock %}
+{% block content %}
+  <h1>Test Assignment {{fork}}</h1>
+  <div>
+  <aside>Note: To reset the deadline and work on the assignment,
+         <a href="{{ url_for('dashboard') }}">click here</a>.
+  </aside>
+  </div>
+  {% set allpassed = (results['stats']['passes'] == results['stats']['total']) %}
+  {% set current = submission and (submission == latest) %}
+  <div>
+    <h2>Assignment Results</h2>
+    {% if not results %}
+    <p>No results exist for your assignment. If you did submit your code, please contact the instructors.</p>
+    {% else %}
+    <div class="progress">
+      {% set pass = ((results['stats']['passes'] | float) * 100 / (results['stats']['total'] | float)) | int %}
+      {% set fail = ((results['stats']['failures'] | float) * 100 / (results['stats']['total'] | float)) | int %}
+      {% set error = 99 - pass - fail %}
+      <div class="progress-bar progress-bar-success" style="width: {{pass}}%">
+          {{results['stats']['passes']*2}} Success
+      </div>
+      <div class="progress-bar progress-bar-danger" style="width: {{fail}}%">
+          {{results['stats']['failures']*2}} Failed
+      </div>
+      <div class="progress-bar progress-bar-warning" style="width: {{error}}%">
+          {{results['stats']['errors']*2}} Error
+      </div>
+    </div>
+    {% endif %}
+  </div>
+{% endblock %}
